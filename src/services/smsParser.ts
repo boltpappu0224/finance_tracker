@@ -4,34 +4,103 @@ interface ParsedTransaction {
   merchant: string;
   description: string;
   source: 'sms';
+  category_hint?: string;
   raw_data: {
     sms_text: string;
     source_app: string;
     parsed_at: string;
+    bank_name?: string;
+    reference?: string;
   };
 }
 
-const upiPatterns = {
+const indianBankPatterns = {
+  hdfc: {
+    name: 'HDFC Bank',
+    debit: /(?:Debit|Debited|Withdrawal).*?₹([\d,]+\.?\d*)|Account [A-Z0-9]+ debited (?:with |by )?₹([\d,]+\.?\d*)/i,
+    credit: /(?:Credit|Credited|Deposit).*?₹([\d,]+\.?\d*)|Account [A-Z0-9]+ credited (?:with |by )?₹([\d,]+\.?\d*)/i,
+    merchant: /(?:at|to|from)\s+([A-Za-z0-9\s&.,-]+?)(?:\s+Ref|\s+on|\s+INR|$)/i,
+  },
+  icici: {
+    name: 'ICICI Bank',
+    debit: /(?:Debit|Withdrawn|Debited).*?₹([\d,]+\.?\d*)|Acct\s+[A-Z0-9]+.*?debited.*?₹([\d,]+\.?\d*)/i,
+    credit: /(?:Credit|Credited|Deposited).*?₹([\d,]+\.?\d*)|Acct\s+[A-Z0-9]+.*?credited.*?₹([\d,]+\.?\d*)/i,
+    merchant: /(?:to|from|at)\s+([A-Za-z0-9\s&.,-]+?)(?:\s+Ref|\s+on|$)/i,
+  },
+  sbi: {
+    name: 'State Bank of India',
+    debit: /(?:Debited|Debit|Withdrawal).*?₹([\d,]+\.?\d*)|Account [A-Z0-9]+ debited (?:with |by )?₹([\d,]+\.?\d*)/i,
+    credit: /(?:Credited|Credit|Deposit).*?₹([\d,]+\.?\d*)|Account [A-Z0-9]+ credited (?:with |by )?₹([\d,]+\.?\d*)/i,
+    merchant: /(?:to|from|at)\s+([A-Za-z0-9\s&.,-]+?)(?:\s+Reference|\s+Ref|\s+on|$)/i,
+  },
+  axis: {
+    name: 'Axis Bank',
+    debit: /(?:Debited|Debit).*?₹([\d,]+\.?\d*)|Account [A-Z0-9]+ has been debited (?:with |by )?₹([\d,]+\.?\d*)/i,
+    credit: /(?:Credited|Credit).*?₹([\d,]+\.?\d*)|Account [A-Z0-9]+ has been credited (?:with |by )?₹([\d,]+\.?\d*)/i,
+    merchant: /(?:to|from|at)\s+([A-Za-z0-9\s&.,-]+?)(?:\s+Ref|\s+on|$)/i,
+  },
+  kotak: {
+    name: 'Kotak Mahindra Bank',
+    debit: /(?:Debited|Debit).*?₹([\d,]+\.?\d*)|Account [A-Z0-9]+ debited (?:with |by )?₹([\d,]+\.?\d*)/i,
+    credit: /(?:Credited|Credit).*?₹([\d,]+\.?\d*)|Account [A-Z0-9]+ credited (?:with |by )?₹([\d,]+\.?\d*)/i,
+    merchant: /(?:to|from|at)\s+([A-Za-z0-9\s&.,-]+?)(?:\s+on|$)/i,
+  },
+  upi: {
+    name: 'UPI Transaction',
+    debit: /(?:paid|sent|transferred).*?₹([\d,]+\.?\d*)/i,
+    credit: /(?:received|credited).*?₹([\d,]+\.?\d*)/i,
+    merchant: /to\s+([A-Za-z0-9\s&.,-]+?)(?:\s+on|\s+Ref|$)/i,
+  },
+};
+
+const upiProviderPatterns = {
   phonepe: {
-    debit: /PhonePe.*?(?:paid|sent).*?₹([\d,]+\.?\d*)/i,
+    debit: /PhonePe.*?(?:paid|sent|transferred).*?₹([\d,]+\.?\d*)/i,
     credit: /PhonePe.*?(?:received|credited).*?₹([\d,]+\.?\d*)/i,
-    merchant: /to\s+([A-Za-z\s]+?)(?:\s+on|$)/i,
+    merchant: /to\s+([A-Za-z\s@.,-]+?)(?:\s+on|\s+via|$)/i,
   },
   googlepay: {
-    debit: /Google Pay.*?(?:paid|sent).*?₹([\d,]+\.?\d*)/i,
+    debit: /Google Pay.*?(?:paid|sent|transferred).*?₹([\d,]+\.?\d*)/i,
     credit: /Google Pay.*?(?:received|credited).*?₹([\d,]+\.?\d*)/i,
-    merchant: /to\s+([A-Za-z\s]+?)(?:\s+on|$)/i,
+    merchant: /to\s+([A-Za-z\s@.,-]+?)(?:\s+on|\s+via|$)/i,
   },
   paytm: {
-    debit: /Paytm.*?(?:payment|transferred).*?₹([\d,]+\.?\d*)/i,
+    debit: /Paytm.*?(?:payment|transferred|paid|sent).*?₹([\d,]+\.?\d*)/i,
     credit: /Paytm.*?(?:received|credited).*?₹([\d,]+\.?\d*)/i,
-    merchant: /to\s+([A-Za-z\s]+?)(?:\s+on|$)/i,
+    merchant: /to\s+([A-Za-z\s@.,-]+?)(?:\s+on|$)/i,
   },
-  bank: {
-    debit: /(?:debited|withdrawn|transferred).*?₹([\d,]+\.?\d*)|Your\s+account\s+[A-Z0-9]+\s+debited\s+(?:with\s+)?₹([\d,]+\.?\d*)/i,
-    credit: /(?:credited|deposited|received).*?₹([\d,]+\.?\d*)|Your\s+account\s+[A-Z0-9]+\s+credited\s+(?:with\s+)?₹([\d,]+\.?\d*)/i,
-    merchant: /(?:from|to|at)\s+([A-Za-z\s&.]+?)(?:\s+on|\s+reference|$)/i,
+  bhaalu: {
+    debit: /Bharat QR.*?(?:paid|transferred).*?₹([\d,]+\.?\d*)/i,
+    credit: /Bharat QR.*?(?:received|credited).*?₹([\d,]+\.?\d*)/i,
+    merchant: /at\s+([A-Za-z\s&.,-]+?)(?:\s+on|$)/i,
   },
+};
+
+const categoryMappings: { [key: string]: string } = {
+  atm: 'cash_withdrawal',
+  groceries: 'groceries',
+  fuel: 'transportation',
+  petrol: 'transportation',
+  uber: 'transportation',
+  ola: 'transportation',
+  zomato: 'food_dining',
+  swiggy: 'food_dining',
+  amazon: 'shopping',
+  flipkart: 'shopping',
+  netflix: 'entertainment',
+  spotify: 'entertainment',
+  gym: 'personal_care',
+  hospital: 'healthcare',
+  pharmacy: 'healthcare',
+  electricity: 'bills',
+  water: 'bills',
+  internet: 'bills',
+  insurance: 'insurance',
+  rent: 'rent',
+  salary: 'salary',
+  wage: 'salary',
+  freelance: 'freelance_income',
+  dividend: 'investment_income',
 };
 
 function cleanAmount(amountStr: string): number {
@@ -43,47 +112,94 @@ function extractFromPattern(text: string, pattern: RegExp): string | null {
   return match ? (match[1] || match[2] || match[0]).trim() : null;
 }
 
-export function parseSMSTransaction(smsText: string): ParsedTransaction | null {
-  const text = smsText.toLowerCase();
+function detectBank(smsText: string): string | null {
+  const textLower = smsText.toLowerCase();
+  if (textLower.includes('hdfc')) return 'hdfc';
+  if (textLower.includes('icici')) return 'icici';
+  if (textLower.includes('sbi') || textLower.includes('state bank')) return 'sbi';
+  if (textLower.includes('axis')) return 'axis';
+  if (textLower.includes('kotak')) return 'kotak';
+  return null;
+}
 
-  for (const [source, patterns] of Object.entries(upiPatterns)) {
-    let isDebit = false;
-    let isCredit = false;
-    let amountStr = '';
-    let merchant = '';
+function detectUPIProvider(smsText: string): string | null {
+  const textLower = smsText.toLowerCase();
+  if (textLower.includes('phonepe')) return 'phonepe';
+  if (textLower.includes('google pay')) return 'googlepay';
+  if (textLower.includes('paytm')) return 'paytm';
+  if (textLower.includes('bharat qr') || textLower.includes('bhaalu')) return 'bhaalu';
+  return null;
+}
 
-    const debitMatch = text.match(patterns.debit);
-    const creditMatch = text.match(patterns.credit);
-
-    if (debitMatch) {
-      isDebit = true;
-      amountStr = debitMatch[1] || debitMatch[2] || '';
-    } else if (creditMatch) {
-      isCredit = true;
-      amountStr = creditMatch[1] || creditMatch[2] || '';
+function detectCategory(merchant: string, smsText: string): string | undefined {
+  const combined = (merchant + ' ' + smsText).toLowerCase();
+  for (const [keyword, category] of Object.entries(categoryMappings)) {
+    if (combined.includes(keyword)) {
+      return category;
     }
+  }
+  return undefined;
+}
 
-    if (amountStr && (isDebit || isCredit)) {
-      merchant = extractFromPattern(smsText, patterns.merchant) || source;
+export function parseSMSTransaction(smsText: string): ParsedTransaction | null {
+  let bankName: string | null = null;
+  let isDebit = false;
+  let isCredit = false;
+  let amountStr = '';
+  let merchant = '';
+  let source = 'bank';
 
-      try {
-        const amount = cleanAmount(amountStr);
+  const upiProvider = detectUPIProvider(smsText);
+  const detectedBank = detectBank(smsText);
 
-        return {
-          amount,
-          type: isDebit ? 'expense' : 'income',
-          merchant,
-          description: `${source.toUpperCase()} transaction`,
-          source: 'sms',
-          raw_data: {
-            sms_text: smsText,
-            source_app: source,
-            parsed_at: new Date().toISOString(),
-          },
-        };
-      } catch (error) {
-        continue;
-      }
+  let patterns: any = {};
+
+  if (upiProvider && upiProviderPatterns[upiProvider as keyof typeof upiProviderPatterns]) {
+    patterns = upiProviderPatterns[upiProvider as keyof typeof upiProviderPatterns];
+    source = upiProvider;
+  } else if (detectedBank && indianBankPatterns[detectedBank as keyof typeof indianBankPatterns]) {
+    const bankPattern = indianBankPatterns[detectedBank as keyof typeof indianBankPatterns];
+    patterns = bankPattern;
+    bankName = bankPattern.name;
+    source = detectedBank;
+  } else {
+    patterns = indianBankPatterns.upi;
+  }
+
+  const debitMatch = smsText.match(patterns.debit);
+  const creditMatch = smsText.match(patterns.credit);
+
+  if (debitMatch) {
+    isDebit = true;
+    amountStr = debitMatch[1] || debitMatch[2] || '';
+  } else if (creditMatch) {
+    isCredit = true;
+    amountStr = creditMatch[1] || creditMatch[2] || '';
+  }
+
+  if (amountStr && (isDebit || isCredit)) {
+    merchant = extractFromPattern(smsText, patterns.merchant) || source;
+    const categoryHint = detectCategory(merchant, smsText);
+
+    try {
+      const amount = cleanAmount(amountStr);
+
+      return {
+        amount,
+        type: isDebit ? 'expense' : 'income',
+        merchant: merchant.trim(),
+        description: `${bankName || source.toUpperCase()} transaction`,
+        source: 'sms',
+        category_hint: categoryHint,
+        raw_data: {
+          sms_text: smsText,
+          source_app: source,
+          parsed_at: new Date().toISOString(),
+          bank_name: bankName || undefined,
+        },
+      };
+    } catch (error) {
+      return null;
     }
   }
 

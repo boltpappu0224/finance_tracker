@@ -485,6 +485,295 @@ export interface Database {
           updated_at?: string
         }
       }
+      recurring_rules: {
+        Row: {
+          id: string
+          user_id: string
+          category_id: string | null
+          account_id: string
+          merchant: string
+          amount: number
+          frequency: 'daily' | 'weekly' | 'biweekly' | 'monthly' | 'quarterly' | 'yearly'
+          start_date: string
+          end_date: string | null
+          next_occurrence: string
+          is_active: boolean
+          auto_create: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          category_id?: string | null
+          account_id: string
+          merchant: string
+          amount: number
+          frequency: 'daily' | 'weekly' | 'biweekly' | 'monthly' | 'quarterly' | 'yearly'
+          start_date: string
+          end_date?: string | null
+          next_occurrence: string
+          is_active?: boolean
+          auto_create?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          category_id?: string | null
+          account_id?: string
+          merchant?: string
+          amount?: number
+          frequency?: 'daily' | 'weekly' | 'biweekly' | 'monthly' | 'quarterly' | 'yearly'
+          start_date?: string
+          end_date?: string | null
+          next_occurrence?: string
+          is_active?: boolean
+          auto_create?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      notifications_log: {
+        Row: {
+          id: string
+          user_id: string
+          transaction_id: string | null
+          subscription_id: string | null
+          loan_id: string | null
+          type: 'budget_alert' | 'subscription_reminder' | 'emi_reminder' | 'anomaly_alert' | 'salary_alert' | 'goal_milestone' | 'achievement' | 'other'
+          title: string
+          message: string
+          data: Json
+          channels: string[]
+          is_read: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          transaction_id?: string | null
+          subscription_id?: string | null
+          loan_id?: string | null
+          type: 'budget_alert' | 'subscription_reminder' | 'emi_reminder' | 'anomaly_alert' | 'salary_alert' | 'goal_milestone' | 'achievement' | 'other'
+          title: string
+          message: string
+          data?: Json
+          channels?: string[]
+          is_read?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          transaction_id?: string | null
+          subscription_id?: string | null
+          loan_id?: string | null
+          type?: 'budget_alert' | 'subscription_reminder' | 'emi_reminder' | 'anomaly_alert' | 'salary_alert' | 'goal_milestone' | 'achievement' | 'other'
+          title?: string
+          message?: string
+          data?: Json
+          channels?: string[]
+          is_read?: boolean
+          created_at?: string
+        }
+      }
+      chat_messages: {
+        Row: {
+          id: string
+          user_id: string
+          role: 'user' | 'assistant'
+          content: string
+          context: Json
+          tokens_used: number | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          role: 'user' | 'assistant'
+          content: string
+          context?: Json
+          tokens_used?: number | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          role?: 'user' | 'assistant'
+          content?: string
+          context?: Json
+          tokens_used?: number | null
+          created_at?: string
+        }
+      }
+      family_members: {
+        Row: {
+          id: string
+          family_id: string
+          user_id: string
+          role: 'admin' | 'member' | 'child' | 'viewer'
+          permissions: string[]
+          added_by: string | null
+          added_at: string
+        }
+        Insert: {
+          id?: string
+          family_id?: string
+          user_id: string
+          role?: 'admin' | 'member' | 'child' | 'viewer'
+          permissions?: string[]
+          added_by?: string | null
+          added_at?: string
+        }
+        Update: {
+          id?: string
+          family_id?: string
+          user_id?: string
+          role?: 'admin' | 'member' | 'child' | 'viewer'
+          permissions?: string[]
+          added_by?: string | null
+          added_at?: string
+        }
+      }
+      user_devices: {
+        Row: {
+          id: string
+          user_id: string
+          device_name: string
+          device_type: 'web' | 'mobile_ios' | 'mobile_android' | 'tablet'
+          user_agent: string | null
+          ip_address: string | null
+          is_active: boolean
+          is_trusted: boolean
+          last_seen: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          device_name: string
+          device_type: 'web' | 'mobile_ios' | 'mobile_android' | 'tablet'
+          user_agent?: string | null
+          ip_address?: string | null
+          is_active?: boolean
+          is_trusted?: boolean
+          last_seen?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          device_name?: string
+          device_type?: 'web' | 'mobile_ios' | 'mobile_android' | 'tablet'
+          user_agent?: string | null
+          ip_address?: string | null
+          is_active?: boolean
+          is_trusted?: boolean
+          last_seen?: string
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      badges: {
+        Row: {
+          id: string
+          name: string
+          description: string | null
+          icon: string | null
+          category: 'saving' | 'tracking' | 'milestone' | 'consistency' | 'achievement'
+          requirement_type: 'transaction_count' | 'days_streak' | 'savings_amount' | 'goal_completed' | 'investment_made'
+          requirement_value: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          description?: string | null
+          icon?: string | null
+          category: 'saving' | 'tracking' | 'milestone' | 'consistency' | 'achievement'
+          requirement_type: 'transaction_count' | 'days_streak' | 'savings_amount' | 'goal_completed' | 'investment_made'
+          requirement_value: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          description?: string | null
+          icon?: string | null
+          category?: 'saving' | 'tracking' | 'milestone' | 'consistency' | 'achievement'
+          requirement_type?: 'transaction_count' | 'days_streak' | 'savings_amount' | 'goal_completed' | 'investment_made'
+          requirement_value?: number
+          created_at?: string
+        }
+      }
+      user_badges: {
+        Row: {
+          id: string
+          user_id: string
+          badge_id: string
+          earned_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          badge_id: string
+          earned_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          badge_id?: string
+          earned_at?: string
+        }
+      }
+      export_logs: {
+        Row: {
+          id: string
+          user_id: string
+          export_type: 'pdf' | 'excel' | 'csv' | 'email'
+          format: string | null
+          date_range_start: string | null
+          date_range_end: string | null
+          file_size_bytes: number | null
+          download_url: string | null
+          status: 'pending' | 'processing' | 'completed' | 'failed'
+          error_message: string | null
+          created_at: string
+          completed_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          export_type: 'pdf' | 'excel' | 'csv' | 'email'
+          format?: string | null
+          date_range_start?: string | null
+          date_range_end?: string | null
+          file_size_bytes?: number | null
+          download_url?: string | null
+          status?: 'pending' | 'processing' | 'completed' | 'failed'
+          error_message?: string | null
+          created_at?: string
+          completed_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          export_type?: 'pdf' | 'excel' | 'csv' | 'email'
+          format?: string | null
+          date_range_start?: string | null
+          date_range_end?: string | null
+          file_size_bytes?: number | null
+          download_url?: string | null
+          status?: 'pending' | 'processing' | 'completed' | 'failed'
+          error_message?: string | null
+          created_at?: string
+          completed_at?: string | null
+        }
+      }
     }
   }
 }
